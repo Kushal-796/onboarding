@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FormData } from "./OnboardingForm";
 
 interface OnboardScreensProps {
   formData: FormData;
   onComplete: (data: Partial<FormData>) => void;
+  onStepChange: (step: number) => void;
 }
 
-export const OnboardScreens = ({ formData, onComplete }: OnboardScreensProps) => {
+export const OnboardScreens = ({ formData, onComplete, onStepChange }: OnboardScreensProps) => {
   const [currentScreen, setCurrentScreen] = useState(1);
   const [screenData, setScreenData] = useState({
     numberOfFounders: formData.numberOfFounders,
@@ -15,6 +16,11 @@ export const OnboardScreens = ({ formData, onComplete }: OnboardScreensProps) =>
     orgStructure: formData.orgStructure,
   });
 
+  // Update step when component mounts or currentScreen changes
+  useEffect(() => {
+    onStepChange(currentScreen);
+  }, [currentScreen, onStepChange]);
+
   const handleOptionSelect = (field: keyof typeof screenData, value: string) => {
     const newData = { ...screenData, [field]: value };
     setScreenData(newData);
@@ -22,12 +28,22 @@ export const OnboardScreens = ({ formData, onComplete }: OnboardScreensProps) =>
     // Auto-advance to next screen
     setTimeout(() => {
       if (currentScreen < 4) {
-        setCurrentScreen(currentScreen + 1);
+        const nextScreen = currentScreen + 1;
+        setCurrentScreen(nextScreen);
+        onStepChange(nextScreen);
       } else {
         // Complete onboard section
         onComplete(newData);
       }
     }, 500);
+  };
+
+  const handleBackClick = () => {
+    if (currentScreen > 1) {
+      const prevScreen = currentScreen - 1;
+      setCurrentScreen(prevScreen);
+      onStepChange(prevScreen);
+    }
   };
 
   const screens = [
@@ -118,7 +134,19 @@ export const OnboardScreens = ({ formData, onComplete }: OnboardScreensProps) =>
         ))}
       </div>
 
-      <div className="mt-8 text-center">
+      <div className="flex justify-between items-center mt-8">
+        <button
+          onClick={handleBackClick}
+          disabled={currentScreen === 1}
+          className={`px-6 py-2 rounded-lg border transition-all duration-300 ${
+            currentScreen === 1
+              ? 'opacity-50 cursor-not-allowed border-border/30 text-muted-foreground'
+              : 'border-border/50 hover:border-primary/50 hover:text-primary'
+          }`}
+        >
+          ← Back
+        </button>
+        
         <p className="text-sm text-muted-foreground">
           Click any option to continue to the next step
         </p>
